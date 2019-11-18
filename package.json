@@ -27,6 +27,7 @@
   "dependencies": {
     "bs58": "^4.0.1",
     "libsodium-wrappers": "^0.7.4",
+    "tweetnacl": "^1.0.1",
     "zeromq": "^5.1.0"
   },
   "devDependencies": {
