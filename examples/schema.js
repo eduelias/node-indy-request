@@ -3,7 +3,7 @@
  * Indy docker pools will need 2 additional trustees added before this example can be run.
  * */
 
-const IndyReq = require('../');
+const IndyReq = require('..');
 const bs58 = require('bs58');
 const nacl = require('tweetnacl');
 const util = require('util');
@@ -43,9 +43,13 @@ async function main() {
   );
 
   // // generate authorized key pairs
-  let trustee1 = nacl.sign.keyPair.fromSeed(
+  let steward = nacl.sign.keyPair.fromSeed(
     Buffer.from(trustees[0], 'utf8')
   );
+
+  let trustee = nacl.sign.keyPair.fromSeed(
+    Buffer.from(trustees[4], 'utf8')
+  )
   // // let trustee2 = nacl.sign.keyPair.fromSecretKey(
   // //   bs58.decode(
   // //     '2nRbhTm1nVdH8TL6NumgqZ7GAbSF4XLWXpXXzmwrmzWRuj3z9WiPSaRXc8Yc5uFoCoWzeRRGGWec7ANTmsHvvSUo'
@@ -65,7 +69,8 @@ async function main() {
   let my1DID = bs58.encode(Buffer.from(toBeOnboarded.publicKey.slice(0, 16)));
   let my1Verkey = bs58.encode(Buffer.from(toBeOnboarded.publicKey)); // create verkey to be authorized on the ledger.
 
-  let trustee1DID = bs58.encode(Buffer.from(trustee1.publicKey.slice(0, 16)));
+  let stewardDID = bs58.encode(Buffer.from(steward.publicKey.slice(0, 16)));
+  let trusteeDID = bs58.encode(Buffer.from(trustee.publicKey.slice(0, 16)));
   // let trustee2DID = bs58.encode(Buffer.from(trustee2.publicKey.slice(0, 16)));
   // let trustee3DID = bs58.encode(Buffer.from(trustee3.publicKey.slice(0, 16)));
   // let trustee4DID = bs58.encode(Buffer.from(trustee4.publicKey.slice(0, 16)));
@@ -73,31 +78,39 @@ async function main() {
   // authorize nym on the ledger with trustee role
   console.log('Anchor NYM');
 
-  let nymTxn = {
-    operation: {
-      type: IndyReq.type.NYM,
-      dest: my1DID,
-      role: IndyReq.role.TRUSTEE,      
-      verkey: my1Verkey,
+  let aml = {
+    'operation': {
+        'type': IndyReq.type.SCHEMA,
+        'data': {
+          'version': '1.0',
+          'name': 'Degree',
+          'attr_names': [
+            'undergrad',
+            'last_name',
+            'first_name',
+            'birth_date',
+            'postgrad',
+            'expiry_dat'
+          ]
+        }
+    },    
+    "taaAcceptance": {
+      "taaDigest": "6d8b27c3454ba7f5b7e175fa9a55be8143b716589afc0adec504babfcc38e706",
+      "mechanism": "EULA",
+      "time": Math.round(new Date().getTime()/100000)
     },
-    // reqId: dockerNode.newReqId(), // Math.round(new Date().getTime()), // dockerNode.newReqId(),
-    reqId:  Math.round(new Date().getTime()/1000),
-    taaAcceptance: {
-      'taaDigest': '',
-      'mechanism': '',
-      'time': Math.round(new Date().getTime()/1000)
-    },
-    endorser: trustee1DID,
-    identifier: trustee1DID,
-    protocolVersion: 2,
-  };
+    'identifier': trusteeDID,
+    'endorser': stewardDID,
+    'reqId': Math.round(new Date().getTime()/1000), //1514304094738044,
+    'protocolVersion': 2    
+}
 
-  for (const trustee of trustees) {
+  for (const itTrustee of trustees) {
     const keys = nacl.sign.keyPair.fromSeed(
-      Buffer.from(trustee, 'utf8')
+      Buffer.from(itTrustee, 'utf8')
     )
     // console.log(trustee, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), bs58.encode(Buffer.from(keys.secretKey)))
-    nymTxn = IndyReq.addSignature(nymTxn, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), keys.secretKey)
+    aml = IndyReq.addSignature(aml, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), keys.secretKey)
   }
 
   // nymTxn = IndyReq.addSignature(nymTxn, trustee1DID, trustee1.secretKey);
@@ -105,7 +118,7 @@ async function main() {
   // nymTxn = IndyReq.addSignature(nymTxn, trustee3DID, trustee3.secretKey);
   // nymTxn = IndyReq.addSignature(nymTxn, trustee4DID, trustee4.secretKey);
 
-  console.log(JSON.stringify(nymTxn, null, 2));
+  console.log(JSON.stringify(aml, null, 2));
 
   dockerNode.close();
 }

@@ -3,7 +3,7 @@
  * Indy docker pools will need 2 additional trustees added before this example can be run.
  * */
 
-const IndyReq = require('../');
+const IndyReq = require('..');
 const bs58 = require('bs58');
 const nacl = require('tweetnacl');
 const util = require('util');
@@ -73,31 +73,29 @@ async function main() {
   // authorize nym on the ledger with trustee role
   console.log('Anchor NYM');
 
-  let nymTxn = {
-    operation: {
-      type: IndyReq.type.NYM,
-      dest: my1DID,
-      role: IndyReq.role.TRUSTEE,      
-      verkey: my1Verkey,
-    },
-    // reqId: dockerNode.newReqId(), // Math.round(new Date().getTime()), // dockerNode.newReqId(),
-    reqId:  Math.round(new Date().getTime()/1000),
-    taaAcceptance: {
-      'taaDigest': '',
-      'mechanism': '',
-      'time': Math.round(new Date().getTime()/1000)
-    },
-    endorser: trustee1DID,
-    identifier: trustee1DID,
-    protocolVersion: 2,
-  };
+  let aml = {
+    'operation': {
+        'type': IndyReq.type.TXN_AUTHOR_AGREEMENT_AML,
+        'version': '1.0',
+        'aml': {
+            'eula': "Included in the EULA for the product being used",
+            'service_agreement': "Included in the agreement with the service provider managing the transaction",
+            'click_agreement': "Agreed through the UI at the time of submission",
+            'session_agreement': "Agreed at wallet instantiation or login"
+        },
+        'amlContext': "http://aml-context-descr"
+    },    
+    'identifier': trustee1DID,
+    'reqId': Math.round(new Date().getTime()/1000), //1514304094738044,
+    'protocolVersion': 2    
+}
 
   for (const trustee of trustees) {
     const keys = nacl.sign.keyPair.fromSeed(
       Buffer.from(trustee, 'utf8')
     )
     // console.log(trustee, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), bs58.encode(Buffer.from(keys.secretKey)))
-    nymTxn = IndyReq.addSignature(nymTxn, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), keys.secretKey)
+    aml = IndyReq.addSignature(aml, bs58.encode(Buffer.from(keys.publicKey.slice(0, 16))), keys.secretKey)
   }
 
   // nymTxn = IndyReq.addSignature(nymTxn, trustee1DID, trustee1.secretKey);
@@ -105,7 +103,7 @@ async function main() {
   // nymTxn = IndyReq.addSignature(nymTxn, trustee3DID, trustee3.secretKey);
   // nymTxn = IndyReq.addSignature(nymTxn, trustee4DID, trustee4.secretKey);
 
-  console.log(JSON.stringify(nymTxn, null, 2));
+  console.log(JSON.stringify(aml, null, 2));
 
   dockerNode.close();
 }

@@ -7,6 +7,8 @@ const serializeForSignature = require('./serializeForSignature');
 const type = {
   NODE: '0',
   NYM: '1',
+  TXN_AUTHOR_AGREEMENT: '4',
+  TXN_AUTHOR_AGREEMENT_AML: '5',
   ATTRIB: '100',
   SCHEMA: '101',
   CRED_DEF: '102',
@@ -14,10 +16,12 @@ const type = {
   NODE_UPGRADE: '110',
   POOL_CONFIG: '111',
   GET_TXN: '3',
+  GET_TXN_AUTHOR_AGREEMENT: '6',
+  GET_TXN_AUTHOR_AGREEMENT_AML: '7',
   GET_ATTR: '104',
   GET_NYM: '105',
   GET_SCHEMA: '107',
-  GET_CRED_DEF: '108',
+  GET_CLAIM_DEF: '108',
 };
 
 const role = {
